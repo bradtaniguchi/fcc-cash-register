@@ -9,7 +9,7 @@ const penniesMap = {
   QUARTER: 25,
   ONE: 100,
   FIVE: 500,
-  TEN: 1000,
+  TEN: 10000,
   TWENTY: 20000,
   'ONE HUNDRED': 100000,
 };
@@ -30,7 +30,7 @@ const coinsAndBills = [
 /**
  * List of coins and bills from largest to smallest
  */
-const billsAndCoins = [...coinsAndBills.reverse()];
+const billsAndCoins = [...coinsAndBills].reverse();
 /**
  * Returns
  * @param {number} price the cost of the item
@@ -51,6 +51,7 @@ module.exports = function checkCashRegister(price, cash, cid) {
     };
   }
   const changeInPennies = getPennies(cash) - getPennies(price);
+  console.log('change in pennies', changeInPennies);
   return getChange(changeInPennies, penniesInDrawer);
 };
 /**
@@ -88,15 +89,25 @@ const removeBill = (bill, penniesInDrawer) => {
  */
 const getChange = (changeInPennies, penniesInDrawer) => {
   const changeInBillsAndCoins = [];
-  while (changeInPennies >= 0) {
-    if (
-      changeInPennies < penniesMap['ONE HUNDRED'] &&
-      hasAmount('ONE HUNDRED', penniesInDrawer)
-    ) {
-      removeBill('ONE HUNDRED', penniesInDrawer);
-      changeInPennies -= penniesMap[bill];
-      changeInBillsAndCoins.push('ONE HUNDRED');
-      continue;
+  let escape = 0;
+  while (changeInPennies >= 0 && escape < 5) {
+    escape++;
+    // TODO: remove escape, prevents infinite loops
+    for (let billOrCoin of billsAndCoins) {
+      if (
+        changeInPennies >= penniesMap[billOrCoin] &&
+        hasAmount(billOrCoin, penniesInDrawer)
+      ) {
+        console.log('found enough', {
+          billOrCoin,
+          changeInPennies,
+        });
+        removeBill(billOrCoin, penniesInDrawer);
+        changeInPennies = changeInPennies - penniesMap[billOrCoin];
+        changeInBillsAndCoins.push(billOrCoin);
+        // break the inner loop, to continue the while
+        break;
+      }
     }
   }
   return changeInBillsAndCoins;
