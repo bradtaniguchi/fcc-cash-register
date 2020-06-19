@@ -1,0 +1,15 @@
+{
+  "name": "fcc-cash-register",
+  "version": "0.0.0",
+  "description": "Code for the fcc-cash-register challenge",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --passWithNoTests"
+  },
+  "author": "bradtaniguchi",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^26.0.1",
+    "prettier": "^2.0.5"
+  }
+}
