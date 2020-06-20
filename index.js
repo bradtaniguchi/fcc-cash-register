@@ -33,69 +33,6 @@ const coinsAndBills = [
  */
 const billsAndCoins = [...coinsAndBills].reverse();
 /**
- * Returns
- * @param {number} price the cost of the item
- * @param {*} cash the amount given
- * @param {*} cid the cash in drawer
- * @returns {string} .status the status of the drawer, could be
- *   - INSUFFICIENT_FUNDS
- *   - CLOSED
- *   - OPEN
- * @returns {array} .change the list of change in bills/coins
- */
-module.exports = function checkCashRegister(price, cash, cid) {
-  const penniesInDrawer = getPenniesInDrawer(cid);
-  const changeInBillsAndCoinsMap = new Map();
-  let changeInPennies = getPennies(cash) - getPennies(price);
-  let bill = 'ONE HUNDRED';
-  // change is cash - price;
-  let escape = 0;
-  while (escape < 5000) {
-    escape++;
-    if (changeInPennies === 0) {
-      if (isEmpty(penniesInDrawer)) {
-        return {
-          status: 'CLOSED',
-          change: toBills(
-            Array.from(addDefaultsOnEmpty(changeInBillsAndCoinsMap).entries())
-          ),
-        };
-      }
-      return {
-        status: 'OPEN',
-        change: toBills(Array.from(changeInBillsAndCoinsMap.entries())),
-      };
-    }
-    if (
-      changeInPennies >= penniesMap[bill] &&
-      hasAmount(bill, penniesInDrawer)
-    ) {
-      // if we can remove this bill, remove it from the drawer
-      removeBill(bill, penniesInDrawer);
-      // and how much we owe
-      changeInPennies = changeInPennies - penniesMap[bill];
-
-      if (changeInBillsAndCoinsMap.has(bill)) {
-        changeInBillsAndCoinsMap.set(
-          bill,
-          changeInBillsAndCoinsMap.get(bill) + penniesMap[bill]
-        );
-        continue;
-      }
-      changeInBillsAndCoinsMap.set(bill, penniesMap[bill]);
-      continue;
-    }
-    bill = getNextBill(bill);
-    if (!bill && changeInPennies > 0) {
-      return {
-        status: 'INSUFFICIENT_FUNDS',
-        change: [],
-      };
-    }
-  }
-  return {};
-};
-/**
  * Returns the pennies for the given price
  */
 const getPennies = (price) => Math.round(price * 100);
@@ -145,6 +82,69 @@ const addDefaultsOnEmpty = (map) => {
   });
   return map;
 };
-
 const isEmpty = (penniesInDrawer) =>
   penniesInDrawer.reduce((acc, [key, pennies]) => (acc += pennies), 0) === 0;
+/**
+ * Returns
+ * @param {number} price the cost of the item
+ * @param {*} cash the amount given
+ * @param {*} cid the cash in drawer
+ * @returns {string} .status the status of the drawer, could be
+ *   - INSUFFICIENT_FUNDS
+ *   - CLOSED
+ *   - OPEN
+ * @returns {array} .change the list of change in bills/coins
+ */
+module.exports = function checkCashRegister(price, cash, cid) {
+  const penniesInDrawer = getPenniesInDrawer(cid);
+  const changeInBillsAndCoinsMap = new Map();
+  let changeInPennies = getPennies(cash) - getPennies(price);
+  let bill = 'ONE HUNDRED';
+  // change is cash - price;
+  let escape = 0;
+  // prevent an infinite loop
+  while (escape < 5000) {
+    escape++;
+    if (changeInPennies === 0) {
+      if (isEmpty(penniesInDrawer)) {
+        return {
+          status: 'CLOSED',
+          change: toBills(
+            Array.from(addDefaultsOnEmpty(changeInBillsAndCoinsMap).entries())
+          ),
+        };
+      }
+      return {
+        status: 'OPEN',
+        change: toBills(Array.from(changeInBillsAndCoinsMap.entries())),
+      };
+    }
+    if (
+      changeInPennies >= penniesMap[bill] &&
+      hasAmount(bill, penniesInDrawer)
+    ) {
+      // if we can remove this bill, remove it from the drawer
+      removeBill(bill, penniesInDrawer);
+      // and how much we owe
+      changeInPennies = changeInPennies - penniesMap[bill];
+
+      if (changeInBillsAndCoinsMap.has(bill)) {
+        changeInBillsAndCoinsMap.set(
+          bill,
+          changeInBillsAndCoinsMap.get(bill) + penniesMap[bill]
+        );
+        continue;
+      }
+      changeInBillsAndCoinsMap.set(bill, penniesMap[bill]);
+      continue;
+    }
+    bill = getNextBill(bill);
+    if (!bill && changeInPennies > 0) {
+      return {
+        status: 'INSUFFICIENT_FUNDS',
+        change: [],
+      };
+    }
+  }
+  return {};
+};
