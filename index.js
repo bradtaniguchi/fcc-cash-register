@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Map of the "cash-type" to their pennies
  * amount
@@ -44,45 +45,72 @@ const billsAndCoins = [...coinsAndBills].reverse();
  */
 module.exports = function checkCashRegister(price, cash, cid) {
   const penniesInDrawer = getPenniesInDrawer(cid);
-  const totalPenniesInDrawer = getTotal(penniesInDrawer);
-  const changeInPennies = getPennies(cash) - getPennies(price);
-  if (totalPenniesInDrawer < changeInPennies) {
-    return {
-      status: 'INSUFFICIENT_FUNDS',
-      change: [],
-    };
+  const changeInBillsAndCoinsMap = new Map();
+  let changeInPennies = getPennies(cash) - getPennies(price);
+  let bill = 'ONE HUNDRED';
+  // change is cash - price;
+  let escape = 0;
+  while (escape < 5000) {
+    escape++;
+    if (changeInPennies === 0) {
+      if (isEmpty(penniesInDrawer)) {
+        return {
+          status: 'CLOSED',
+          change: toBills(
+            Array.from(addDefaultsOnEmpty(changeInBillsAndCoinsMap).entries())
+          ),
+        };
+      }
+      return {
+        status: 'OPEN',
+        change: toBills(Array.from(changeInBillsAndCoinsMap.entries())),
+      };
+    }
+    if (
+      changeInPennies >= penniesMap[bill] &&
+      hasAmount(bill, penniesInDrawer)
+    ) {
+      // if we can remove this bill, remove it from the drawer
+      removeBill(bill, penniesInDrawer);
+      // and how much we owe
+      changeInPennies = changeInPennies - penniesMap[bill];
+
+      if (changeInBillsAndCoinsMap.has(bill)) {
+        changeInBillsAndCoinsMap.set(
+          bill,
+          changeInBillsAndCoinsMap.get(bill) + penniesMap[bill]
+        );
+        continue;
+      }
+      changeInBillsAndCoinsMap.set(bill, penniesMap[bill]);
+      continue;
+    }
+    bill = getNextBill(bill);
+    if (!bill && changeInPennies > 0) {
+      return {
+        status: 'INSUFFICIENT_FUNDS',
+        change: [],
+      };
+    }
   }
-  console.log('change in pennies', changeInPennies);
-  return {
-    change: getChange(changeInPennies, penniesInDrawer),
-    status: totalPenniesInDrawer === changeInPennies ? 'CLOSED' : 'OPEN',
-  };
+  return {};
 };
 /**
  * Returns the pennies for the given price
  */
 const getPennies = (price) => Math.round(price * 100);
 /**
- * Returns the pennies in the drawer from the cash in the drawer
+ * Converts cash to pennies in the drawer
  */
 const getPenniesInDrawer = (cid) =>
   cid.reduce((acc, [kind, amount]) => [...acc, [kind, getPennies(amount)]], []);
 
 /**
- * Returns if the pennies in the drawer meets the price
- * @deprecated
- */
-const hasFunds = (price, penniesInDrawer) =>
-  penniesInDrawer.reduce((acc, [_, pennies]) => (acc += pennies), 0) >=
-  getPennies(price);
-
-const getTotal = (penniesInDrawer) =>
-  penniesInDrawer.reduce((acc, [_, pennies]) => (acc += pennies), 0);
-/**
  * Returns if the bill given has enough available in the drawer
  */
 const hasAmount = (bill, penniesInDrawer) =>
   penniesInDrawer[coinsAndBills.indexOf(bill)][1] >= penniesMap[bill];
+
 /**
  * Removes the given bill from the pennies in the drawer via reference.
  */
@@ -93,34 +121,30 @@ const removeBill = (bill, penniesInDrawer) => {
 };
 
 /**
- * Returns the change in bills from the change in pennies from the drawer
+ * Returns the next bill, if there is one
  */
-const getChange = (changeInPennies, penniesInDrawer) => {
-  const changeInBillsAndCoinsMap = new Map();
-  let escape = 0;
-  while (changeInPennies >= 0 && escape < 5000) {
-    escape++;
-    // TODO: remove escape, prevents infinite loops
-    for (let billOrCoin of billsAndCoins) {
-      if (
-        changeInPennies >= penniesMap[billOrCoin] &&
-        hasAmount(billOrCoin, penniesInDrawer)
-      ) {
-        removeBill(billOrCoin, penniesInDrawer);
-        changeInPennies = changeInPennies - penniesMap[billOrCoin];
-        if (changeInBillsAndCoinsMap.has(billOrCoin)) {
-          changeInBillsAndCoinsMap.set(
-            billOrCoin,
-            changeInBillsAndCoinsMap.get(billOrCoin) +
-              penniesMap[billOrCoin] / 100
-          );
-          continue;
-        }
-        changeInBillsAndCoinsMap.set(billOrCoin, penniesMap[billOrCoin] / 100);
-        // break the inner loop, to continue the while
-        break;
-      }
-    }
+const getNextBill = (bill) => {
+  if (bill === 'PENNY') {
+    return null;
   }
-  return Array.from(changeInBillsAndCoinsMap.entries());
+  return billsAndCoins[billsAndCoins.indexOf(bill) + 1];
 };
+
+const toBills = (penniesInDrawer) =>
+  penniesInDrawer.reduce(
+    (acc, [kind, pennies]) => [...acc, [kind, pennies / 100]],
+    []
+  );
+
+const addDefaultsOnEmpty = (map) => {
+  coinsAndBills.forEach((coinOrBill) => {
+    if (map.has(coinOrBill)) {
+      return;
+    }
+    map.set(coinOrBill, 0);
+  });
+  return map;
+};
+
+const isEmpty = (penniesInDrawer) =>
+  penniesInDrawer.reduce((acc, [key, pennies]) => (acc += pennies), 0) === 0;
