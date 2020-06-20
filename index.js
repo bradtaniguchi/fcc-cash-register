@@ -44,17 +44,18 @@ const billsAndCoins = [...coinsAndBills].reverse();
  */
 module.exports = function checkCashRegister(price, cash, cid) {
   const penniesInDrawer = getPenniesInDrawer(cid);
-  if (!hasFunds(price, penniesInDrawer)) {
+  const totalPenniesInDrawer = getTotal(penniesInDrawer);
+  const changeInPennies = getPennies(cash) - getPennies(price);
+  if (totalPenniesInDrawer < changeInPennies) {
     return {
       status: 'INSUFFICIENT_FUNDS',
       change: [],
     };
   }
-  const changeInPennies = getPennies(cash) - getPennies(price);
   console.log('change in pennies', changeInPennies);
   return {
     change: getChange(changeInPennies, penniesInDrawer),
-    status: 'OPEN',
+    status: totalPenniesInDrawer === changeInPennies ? 'CLOSED' : 'OPEN',
   };
 };
 /**
@@ -69,10 +70,14 @@ const getPenniesInDrawer = (cid) =>
 
 /**
  * Returns if the pennies in the drawer meets the price
+ * @deprecated
  */
 const hasFunds = (price, penniesInDrawer) =>
   penniesInDrawer.reduce((acc, [_, pennies]) => (acc += pennies), 0) >=
   getPennies(price);
+
+const getTotal = (penniesInDrawer) =>
+  penniesInDrawer.reduce((acc, [_, pennies]) => (acc += pennies), 0);
 /**
  * Returns if the bill given has enough available in the drawer
  */
