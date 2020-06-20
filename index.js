@@ -9,9 +9,9 @@ const penniesMap = {
   QUARTER: 25,
   ONE: 100,
   FIVE: 500,
-  TEN: 10000,
-  TWENTY: 20000,
-  'ONE HUNDRED': 100000,
+  TEN: 1000,
+  TWENTY: 2000,
+  'ONE HUNDRED': 10000,
 };
 /**
  * List of bills and coins from smallest to largest
@@ -77,7 +77,7 @@ const hasFunds = (price, penniesInDrawer) =>
  * Returns if the bill given has enough available in the drawer
  */
 const hasAmount = (bill, penniesInDrawer) =>
-  penniesInDrawer[coinsAndBills.indexOf(bill)][1] > penniesMap[bill];
+  penniesInDrawer[coinsAndBills.indexOf(bill)][1] >= penniesMap[bill];
 /**
  * Removes the given bill from the pennies in the drawer via reference.
  */
@@ -93,7 +93,7 @@ const removeBill = (bill, penniesInDrawer) => {
 const getChange = (changeInPennies, penniesInDrawer) => {
   const changeInBillsAndCoinsMap = new Map();
   let escape = 0;
-  while (changeInPennies >= 0 && escape < 5) {
+  while (changeInPennies >= 0 && escape < 5000) {
     escape++;
     // TODO: remove escape, prevents infinite loops
     for (let billOrCoin of billsAndCoins) {
