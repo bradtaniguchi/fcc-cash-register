@@ -46,7 +46,7 @@ module.exports = function checkCashRegister(price, cash, cid) {
   const penniesInDrawer = getPenniesInDrawer(cid);
   if (!hasFunds(price, penniesInDrawer)) {
     return {
-      STATUS: 'INSUFFICIENT_FUNDS',
+      status: 'INSUFFICIENT_FUNDS',
       change: [],
     };
   }
