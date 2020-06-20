@@ -52,7 +52,10 @@ module.exports = function checkCashRegister(price, cash, cid) {
   }
   const changeInPennies = getPennies(cash) - getPennies(price);
   console.log('change in pennies', changeInPennies);
-  return getChange(changeInPennies, penniesInDrawer);
+  return {
+    change: getChange(changeInPennies, penniesInDrawer),
+    status: 'OPEN',
+  };
 };
 /**
  * Returns the pennies for the given price
@@ -88,7 +91,7 @@ const removeBill = (bill, penniesInDrawer) => {
  * Returns the change in bills from the change in pennies from the drawer
  */
 const getChange = (changeInPennies, penniesInDrawer) => {
-  const changeInBillsAndCoins = [];
+  const changeInBillsAndCoinsMap = new Map();
   let escape = 0;
   while (changeInPennies >= 0 && escape < 5) {
     escape++;
@@ -98,17 +101,21 @@ const getChange = (changeInPennies, penniesInDrawer) => {
         changeInPennies >= penniesMap[billOrCoin] &&
         hasAmount(billOrCoin, penniesInDrawer)
       ) {
-        console.log('found enough', {
-          billOrCoin,
-          changeInPennies,
-        });
         removeBill(billOrCoin, penniesInDrawer);
         changeInPennies = changeInPennies - penniesMap[billOrCoin];
-        changeInBillsAndCoins.push(billOrCoin);
+        if (changeInBillsAndCoinsMap.has(billOrCoin)) {
+          changeInBillsAndCoinsMap.set(
+            billOrCoin,
+            changeInBillsAndCoinsMap.get(billOrCoin) +
+              penniesMap[billOrCoin] / 100
+          );
+          continue;
+        }
+        changeInBillsAndCoinsMap.set(billOrCoin, penniesMap[billOrCoin] / 100);
         // break the inner loop, to continue the while
         break;
       }
     }
   }
-  return changeInBillsAndCoins;
+  return Array.from(changeInBillsAndCoinsMap.entries());
 };
